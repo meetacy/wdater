@@ -7,7 +7,7 @@ group = "app.meetacy.wdater"
 publishing {
     repositories {
         maven {
-            name = "MeetacySdk"
+            name = "Wdater"
             url = uri("https://maven.pkg.github.com/meetacy/wdater")
             credentials {
                 username = System.getenv("GITHUB_USERNAME")
