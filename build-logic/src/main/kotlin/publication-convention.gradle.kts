@@ -2,7 +2,7 @@ plugins {
     id("org.gradle.maven-publish")
 }
 
-group = "app.meetacy.sdk"
+group = "app.meetacy.wdater"
 
 publishing {
     repositories {
