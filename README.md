@@ -22,12 +22,13 @@ Installation
 
 > **Warning**
 > 
-> ⚠️ This is not yet available, library is only a snapshot ⚠️
+> ⚠️ This is available for downloading only from 
+> GitHub packages for now, the library is only a snapshot ⚠️
 
 Add the following dependency to your project's build.gradle file:
 
 ```kts
-implementation('app.meetacy:wdater:$wdaterVersion')
+implementation('app.meetacy.wdater:wdater:$wdaterVersion')
 ```
 
 Replace `$wdaterVersion` with the latest version from release.
