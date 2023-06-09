@@ -50,7 +50,7 @@ Usage
         // Specify the default schema version
         // Used if there is no migrations and `null` was returned by storage
         defaultSchemaVersion = 0
-        // Init database, invoked if storage 'null' was returned by storage
+        // Init database, invoked if 'null' was returned by storage
         initializer { 
             createTables() 
         }
