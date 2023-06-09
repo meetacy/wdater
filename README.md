@@ -43,12 +43,16 @@ Usage
         // Specify your Exposed database instance
         // If not specified, it will use global object
         database = myDatabase 
-        // Specify the default schema version
-        // Used if there is no migrations and `null` returned in storage
-        defaultSchemaVersion = 0
         // Specify where to store info about migrations
         // If not specified, used a default variant with table named 'migrations' 
         storage = tableStorage(tableName = "migrations")
+        // Specify the default schema version
+        // Used if there is no migrations and `null` was returned by storage
+        defaultSchemaVersion = 0
+        // Init database, invoked if storage 'null' was returned by storage
+        initializer { 
+            createTables() 
+        }
     }
     ```
 
