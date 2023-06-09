@@ -7,7 +7,7 @@ on:
 
 jobs:
   library-deploy:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     env:
       GITHUB_USERNAME: "meetacy"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
