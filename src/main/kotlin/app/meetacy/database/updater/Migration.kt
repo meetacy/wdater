@@ -16,6 +16,11 @@ public interface Migration {
     public val toVersion: Int get() = fromVersion + 1
 
     /**
+     * The string used as name when printing this migration
+     */
+    public val displayName: String get() = "Migration"
+
+    /**
      * Function that defines the migration logic
      */
     public suspend fun MigrationContext.migrate()

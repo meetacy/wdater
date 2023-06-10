@@ -1,5 +1,6 @@
 package app.meetacy.database.updater
 
+import app.meetacy.database.updater.log.Logger
 import org.jetbrains.exposed.sql.Database
 
 /**
@@ -9,17 +10,25 @@ import org.jetbrains.exposed.sql.Database
  * @property storage The storage implementation for managing migrations.
  * @property defaultSchemaVersion The default schema version.
  * @property initializer The initializer for performing database initialization.
+ * @property logger The logger implementation to log process of migration.
  */
 public class WdaterConfig(
     public val database: Database? = null,
     public val storage: WdaterStorage = WdaterTable(database = database),
     public val defaultSchemaVersion: Int = 0,
-    public val initializer: DatabaseInitializer = DatabaseInitializer.Empty
+    public val initializer: DatabaseInitializer = DatabaseInitializer.Empty,
+    public val logger: Logger = Logger.Simple()
 ) {
     /**
      * Creates a new [Builder] instance to configure the [WdaterConfig].
      */
-    public fun builder(): Builder = Builder(database, storage, defaultSchemaVersion)
+    public fun builder(): Builder = Builder(
+        database = database,
+        storage = storage,
+        defaultSchemaVersion = defaultSchemaVersion,
+        initializer = initializer,
+        logger = logger
+    )
 
     /**
      * Builder class for configuring the [WdaterConfig].
@@ -28,7 +37,8 @@ public class WdaterConfig(
         public var database: Database? = null,
         public var storage: WdaterStorage = WdaterTable(database = database),
         public var defaultSchemaVersion: Int = 0,
-        public var initializer: DatabaseInitializer = DatabaseInitializer.Empty
+        public var initializer: DatabaseInitializer = DatabaseInitializer.Empty,
+        public var logger: Logger = Logger.Simple()
     ) {
         /**
          * Creates the table storage configuration for managing migrations.
@@ -66,7 +76,8 @@ public class WdaterConfig(
             database = database,
             storage = storage,
             defaultSchemaVersion = defaultSchemaVersion,
-            initializer = initializer
+            initializer = initializer,
+            logger = logger
         )
     }
 }

@@ -1,5 +1,6 @@
 package app.meetacy.database.updater
 
+import app.meetacy.database.updater.log.Logger
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.Table.Dual.default
 import org.jetbrains.exposed.sql.Transaction
@@ -10,7 +11,10 @@ import org.jetbrains.exposed.sql.Transaction
  *
  * @param transaction The database transaction in which the migration is executed.
  */
-public class MigrationContext(public val transaction: Transaction) {
+public class MigrationContext(
+    public val transaction: Transaction,
+    public val logger: Logger
+) {
 
     /**
      * Creates the column in the associated table.
