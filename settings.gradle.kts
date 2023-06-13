@@ -17,3 +17,5 @@ dependencyResolutionManagement {
 }
 
 includeBuild("build-logic")
+
+include("auto-migrations")
