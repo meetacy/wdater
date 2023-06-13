@@ -211,6 +211,6 @@ public class AutoMigration(
     }
 
     public class CannotAutoMigrateException : RuntimeException(
-        message = "Ambiguity occurred while migrating, cannot make auto migration for current state"
+        /* message = */"Ambiguity occurred while migrating, cannot make auto migration for current state"
     )
 }
