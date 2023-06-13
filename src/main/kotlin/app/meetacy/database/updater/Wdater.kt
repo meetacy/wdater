@@ -144,22 +144,22 @@ public class Wdater(private val config: WdaterConfig = WdaterConfig()) {
         }
 
         if (storage is WdaterTable) {
-            logger.log("• Migrations Storage: Default implementation is used for writing, table '${storage.tableName}'")
+            logger.log("* Migrations Storage: Default implementation is used for writing, table '${storage.tableName}'")
         } else {
-            logger.log("• Migrations Storage: Custom implementation")
+            logger.log("* Migrations Storage: Custom implementation")
         }
 
         val initializerSpecified = config.initializer is DatabaseInitializer.Empty
-        logger.log("• Initializer: ${if (initializerSpecified) "specified" else "unspecified"}")
+        logger.log("* Initializer: ${if (initializerSpecified) "specified" else "unspecified"}")
 
-        logger.log("• Migrations: ${stringifyMigrations(migrations)}")
+        logger.log("* Migrations: ${stringifyMigrations(migrations)}")
     }
 
     private fun stringifyMigrations(migrations: List<Migration>): String =
         migrations.map(::stringifyMigration).toString()
 
     private fun stringifyMigration(migration: Migration): String =
-        "${migration.displayName}{${migration.fromVersion} -> ${migration.toVersion}}"
+        "${migration.displayName}{${migration.fromVersion} > ${migration.toVersion}}"
 
     /**
      * Configure the [Wdater] instance using the provided configuration block.

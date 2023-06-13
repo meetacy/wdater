@@ -8,14 +8,18 @@ public interface Logger {
 
     public operator fun get(tag: String): Logger
 
-    public class Simple(private val tag: String? = null) : Logger {
+    public class Simple(
+        private val includeTimestamp: Boolean = true,
+        private val tag: String? = null,
+        private val delimiter: String = " > "
+    ) : Logger {
         override fun log(message: String) {
-            simpleLog(message, tag)
+            simpleLog(message, includeTimestamp, tag)
         }
 
         override fun get(tag: String): Logger {
-            this.tag ?: return Simple(tag)
-            return Simple(tag = "${this.tag} > $tag")
+            this.tag ?: return Simple(includeTimestamp, tag, delimiter)
+            return Simple(includeTimestamp, tag = "${this.tag}$delimiter$tag", delimiter)
         }
     }
 
@@ -28,12 +32,25 @@ public interface Logger {
 
 private val format = SimpleDateFormat("dd-MM-yyyy/hh:mm:ss")
 
-private fun simpleLog(message: String, tag: String?) {
+private fun simpleLog(
+    message: String,
+    includeTimestamp: Boolean,
+    tag: String?
+) {
     val prettyDate = format.format(Date())
 
-    if (tag == null) {
-        println("$prettyDate: $message")
-    } else {
-        println("$prettyDate [$tag]: $message")
+    val log = buildString {
+        if (includeTimestamp) {
+            append(prettyDate)
+        }
+        if (tag != null) {
+            append(" [$tag]")
+        }
+        if (includeTimestamp || tag != null) {
+            append(": ")
+        }
+        append(message)
     }
+
+    println(log)
 }
