@@ -6,7 +6,6 @@ import app.meetacy.database.updater.log.Logger
 import app.meetacy.database.updater.log.SQL
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.vendors.ColumnMetadata
-import kotlin.math.log
 
 public fun AutoMigration(
     vararg tables: Table,
@@ -15,7 +14,7 @@ public fun AutoMigration(
 ): AutoMigration = AutoMigration(tables.toList(), fromVersion, toVersion)
 
 /**
- * Auto migrations do not support renaming
+ * Auto migrations do not support renaming/deleting
  */
 public class AutoMigration(
     private val tables: List<Table>,
