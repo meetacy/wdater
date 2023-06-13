@@ -28,7 +28,7 @@ Installation
 Add the following dependency to your project's build.gradle file:
 
 ```kts
-implementation('app.meetacy.wdater:wdater:$wdaterVersion')
+implementation("app.meetacy.wdater:wdater:$wdaterVersion")
 ```
 
 Replace `$wdaterVersion` with the latest version from release.
@@ -81,13 +81,7 @@ Usage
         
     ```kotlin
     object UsersTable : Table() {
-        val USER_ID = long("USER_ID").autoIncrement()
-        val ACCESS_HASH = varchar("ACCESS_HASH", length = HASH_LENGTH)
-        val NICKNAME = varchar("NICKNAME", length = NICKNAME_MAX_LIMIT)
         val USERNAME = varchar("USERNAME", length = USERNAME_MAX_LIMIT).nullable()
-        val EMAIL = varchar("EMAIL", length = EMAIL_MAX_LIMIT).nullable()
-        val EMAIL_VERIFIED = bool("EMAIL_VERIFIED").default(false)
-        val AVATAR_ID = long("AVATAR_ID").nullable()
     }
     ```
     
@@ -101,6 +95,24 @@ Usage
     
     You can also pass a list of migrations to update multiple steps at once.
 
+Auto Migrations
+---------------
+
+To use automatic migrations, you need to include this dependency:
+
+```kts
+implementation("app.meetacy.wdater:auto-migrations:$wdaterVersion")
+```
+
+Then you can use this factory function to create a migration:
+
+```kotlin
+fun AutoMigration(
+    vararg tables: Table,
+    fromVersion: Int,
+    toVersion: Int = fromVersion + 1
+): AutoMigration
+```
 
 Future Plans for Wdater
 -----------------------
