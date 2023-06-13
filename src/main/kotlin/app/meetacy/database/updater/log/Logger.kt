@@ -44,7 +44,8 @@ private fun simpleLog(
             append(prettyDate)
         }
         if (tag != null) {
-            append(" [$tag]")
+            if (includeTimestamp) append(" ")
+            append("[$tag]")
         }
         if (includeTimestamp || tag != null) {
             append(": ")

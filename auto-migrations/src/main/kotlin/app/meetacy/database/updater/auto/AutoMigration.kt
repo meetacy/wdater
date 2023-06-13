@@ -4,10 +4,7 @@ import app.meetacy.database.updater.Migration
 import app.meetacy.database.updater.MigrationContext
 import app.meetacy.database.updater.log.Logger
 import app.meetacy.database.updater.log.SQL
-import org.jetbrains.exposed.sql.Column
-import org.jetbrains.exposed.sql.IntegerColumnType
-import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.vendors.ColumnMetadata
 import kotlin.math.log
 
@@ -35,49 +32,15 @@ public class AutoMigration(
     private fun MigrationContext.migrateTables() {
         logger.log("Migrating tables...")
         val logger = logger["tables-migration"]
-        val tablesOnServer = transaction.db.dialect.allTablesNames()
-        removeObsoleteTables(logger,  tablesOnServer)
+
+        val rawNames = transaction.db.dialect.allTablesNames()
+        logger.log("Tables from server: $rawNames")
+        val schema = transaction.connection.schema
+        logger.log("Default schema: $schema")
+
+        val tablesOnServer = rawNames.map { name -> name.removePrefix("$schema.") }
+
         createMissingTables(logger, tablesOnServer)
-    }
-
-    /**
-     * @return whether the migration should be continued or not
-     */
-    private fun MigrationContext.removeObsoleteTables(
-        baseLogger: Logger,
-        tablesOnServer: List<String>
-    ) {
-        baseLogger.log("Removing obsolete tables...")
-        val logger = baseLogger["remove"]
-
-        val obsoleteTables = tablesOnServer
-            .filter { name ->
-                tables.none { table -> table.tableName == name }
-            }
-
-        if (obsoleteTables.isEmpty()) {
-            logger.log("No obsolete tables were found")
-            return
-        }
-
-        val hasNewTables = tables.any { table ->
-            tablesOnServer.none { tableName -> table.tableName == tableName }
-        }
-
-        if (hasNewTables) {
-            logger.log("There are both new and obsolete tables, so we can't delete them in order " +
-                    "not to lose data in case the table was renamed. Aborting migration...")
-            cannotMigrate()
-        }
-
-        logger.log("Found obsolete tables: $obsoleteTables, dropping them...")
-
-        val drop = obsoleteTables.flatMap { tableName ->
-            Table(tableName).dropStatement()
-        }
-        execInBatch(logger, drop)
-
-        logger.log("Obsolete tables were dropped")
     }
 
     private fun MigrationContext.createMissingTables(
@@ -88,7 +51,7 @@ public class AutoMigration(
         val logger = baseLogger["create"]
 
         val newTables = tables.filter { table ->
-            tablesOnServer.none { name -> table.tableName == name }
+            tablesOnServer.none { name -> normalizedTableName(table) == name }
         }
 
         if (newTables.isEmpty()) {
@@ -108,91 +71,74 @@ public class AutoMigration(
         logger.log("Migrating columns...")
         val logger = logger["columns-migration"]
         val columnsOnServer = transaction.db.dialect.tableColumns(*tables.toTypedArray())
-        tables.forEach { table ->
-            logger.log("Migrating ${table.tableName}...")
-            val tableLogger = logger[table.tableName]
-            removeObsoleteColumns(tableLogger, table, columnsOnServer.getValue(table))
-            createMissingColumns(tableLogger, table, columnsOnServer.getValue(table))
-            modifyAllColumns(tableLogger, table)
-        }
+        createMissingColumns(logger, columnsOnServer)
+        val updatedColumnOnServer = transaction.db.dialect.tableColumns(*tables.toTypedArray())
+        modifyAllColumns(logger, updatedColumnOnServer)
         logger.log("Migration completed!")
-    }
-
-    private fun MigrationContext.removeObsoleteColumns(
-        baseLogger: Logger,
-        table: Table,
-        columnsOnServer: List<ColumnMetadata>
-    ) {
-        baseLogger.log("Removing obsolete columns...")
-        val logger = baseLogger["remove"]
-
-        val obsoleteColumns = columnsOnServer.filter { metadata ->
-            table.columns.none { column ->
-                column.name == metadata.name
-            }
-        }
-
-        if (obsoleteColumns.isEmpty()) {
-            logger.log("No obsolete columns found")
-            return
-        }
-
-        val hasNewColumns = table.columns.any { column ->
-            columnsOnServer.none { metadata ->
-                metadata.name == column.name
-            }
-        }
-
-        if (hasNewColumns) {
-            logger.log("There are both new and obsolete columns, so we can't delete them in order " +
-                    "not to lose data in case the table was renamed. Aborting migration...")
-            cannotMigrate()
-        }
-
-        logger.log("Found obsolete columns: ${obsoleteColumns.map(ColumnMetadata::name)}, dropping them...")
-
-        val drop = obsoleteColumns.flatMap { metadata ->
-            table.dropColumnStatement(metadata.name)
-        }
-        execInBatch(logger, drop)
-
-        logger.log("Obsolete columns were dropped")
     }
 
     private fun MigrationContext.createMissingColumns(
         baseLogger: Logger,
-        table: Table,
-        columnsOnServer: List<ColumnMetadata>
+        databaseColumns: Map<Table, List<ColumnMetadata>>
     ) {
         baseLogger.log("Creating missing columns...")
-        val logger = baseLogger["create"]
+        val parentLogger = baseLogger["create"]
 
-        val newColumns = table.columns.filter { column ->
-            columnsOnServer.none { metadata -> column.name == metadata.name }
+        tables.forEach { table ->
+            parentLogger.log("Working on: ${normalizedTableName(table)}")
+
+            val logger = parentLogger[normalizedTableName(table)]
+            val columnsOnServer = databaseColumns.getValue(table)
+
+            val newColumns = table.columns.filter { column ->
+                columnsOnServer.none { metadata -> normalizedColumnName(column) == metadata.name }
+            }
+
+            if (newColumns.isEmpty()) {
+                logger.log("No new columns were found")
+                return@forEach
+            }
+
+            logger.log("New columns were found: ${newColumns.map { normalizedColumnName(it) } }, creating them...")
+
+            val create = newColumns.flatMap { column -> column.createStatement() }
+            execInBatch(logger, create)
+
+            logger.log("New columns were created")
         }
-
-        if (newColumns.isEmpty()) {
-            logger.log("No new columns were found")
-            return
-        }
-
-        logger.log("New columns were found: ${newColumns.map(Column<*>::name)}, creating them...")
-
-        val create = newColumns.flatMap { column -> column.createStatement() }
-        execInBatch(logger, create)
-
-        logger.log("New columns were created")
     }
 
     private fun MigrationContext.modifyAllColumns(
         baseLogger: Logger,
-        table: Table
+        databaseColumns: Map<Table, List<ColumnMetadata>>
     ) {
         baseLogger.log("Modifying all columns...")
-        val logger = baseLogger["modify-all"]
-        val modify = table.columns.flatMap { it.modifyStatement() }
-        execInBatch(logger, modify)
-        logger.log("Columns were modified")
+        val parentLogger = baseLogger["modify-all"]
+
+        tables.forEach { table ->
+            parentLogger.log("Working on ${normalizedTableName(table)}")
+            val logger = parentLogger[normalizedTableName(table)]
+
+            val columnsOnServer = databaseColumns.getValue(table)
+
+            val modify = table.columns.map { column ->
+                column to columnsOnServer.first { it.name == normalizedColumnName(column) }
+            }.flatMap { (column, columnOnServer) ->
+                // exposed doesn't support migration of auto inc
+                if (column.columnType.isAutoInc) return@flatMap emptyList()
+
+                column.modifyStatements(
+                    ColumnDiff(
+                        nullability = column.columnType.nullable != columnOnServer.nullable,
+                        autoInc = false,
+                        defaults = true,
+                        caseSensitiveName = true
+                    )
+                )
+            }
+            execInBatch(logger, modify)
+            logger.log("Columns were modified")
+        }
     }
 
     private fun MigrationContext.execInBatch(
@@ -201,6 +147,14 @@ public class AutoMigration(
     ) {
         statements.forEach(baseLogger.SQL::log)
         transaction.execInBatch(statements)
+    }
+
+    private fun MigrationContext.normalizedTableName(table: Table): String {
+        return table.nameInDatabaseCase().removePrefix("${transaction.connection.schema}.")
+    }
+
+    private fun MigrationContext.normalizedColumnName(column: Column<*>): String {
+        return column.nameInDatabaseCase()
     }
 
     override val displayName: String = "AutoMigration"
