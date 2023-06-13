@@ -1,11 +1,9 @@
 package app.meetacy.database.updater
 
 import kotlinx.coroutines.Dispatchers
-import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.name
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import kotlin.math.log
 
 /**
  * Create a new instance of [Wdater] with the provided configuration.
@@ -112,7 +110,7 @@ public class Wdater(private val config: WdaterConfig = WdaterConfig()) {
         }
 
         if (migration == null) {
-            logger.log("No migrations was found, therefore the ending point of migration is $fromVersion")
+            logger.log("No migrations were found, therefore the ending point of migration is $fromVersion")
             return fromVersion
         }
 
@@ -138,9 +136,9 @@ public class Wdater(private val config: WdaterConfig = WdaterConfig()) {
         val logger = logger["dependencies"]
 
         if (db == null) {
-            logger.log("• Database: ${TransactionManager.defaultDatabase?.name} (from global object)")
+            logger.log("* Database: ${TransactionManager.defaultDatabase?.name} (from global object)")
         } else {
-            logger.log("• Database: ${db.name} (passed explicitly)")
+            logger.log("* Database: ${db.name} (passed explicitly)")
         }
 
         if (storage is WdaterTable) {
@@ -149,8 +147,8 @@ public class Wdater(private val config: WdaterConfig = WdaterConfig()) {
             logger.log("* Migrations Storage: Custom implementation")
         }
 
-        val initializerSpecified = config.initializer is DatabaseInitializer.Empty
-        logger.log("* Initializer: ${if (initializerSpecified) "specified" else "unspecified"}")
+        val initializerEmpty = config.initializer is DatabaseInitializer.Empty
+        logger.log("* Initializer: ${if (initializerEmpty) "unspecified" else "specified"}")
 
         logger.log("* Migrations: ${stringifyMigrations(migrations)}")
     }
