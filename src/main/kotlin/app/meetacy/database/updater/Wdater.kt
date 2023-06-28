@@ -70,14 +70,14 @@ public class Wdater(private val config: WdaterConfig = WdaterConfig()) {
 
         val maxVersion = maxMigrationsVersion ?: config.defaultSchemaVersion
 
-        logger.log("Saving $maxVersion schema version using storage")
-        storage.setSchemaVersion(maxVersion)
-
         if (config.initializer is DatabaseInitializer.Empty) {
             logger.log("No initializer provided")
         } else {
             logger.log("Running custom initializer...")
         }
+
+        logger.log("Saving $maxVersion schema version using storage")
+        storage.setSchemaVersion(maxVersion)
 
         newSuspendedTransaction(Dispatchers.IO, db) {
             with(config.initializer) {
