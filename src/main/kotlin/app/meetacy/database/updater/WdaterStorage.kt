@@ -55,7 +55,7 @@ public class WdaterTable(
      */
     override suspend fun getSchemaVersion(): Int? {
         return newSuspendedTransaction(Dispatchers.IO, database) {
-            selectAll().firstOrNull()?.get(SCHEMA_VERSION)
+            selectAll().firstOrNull()?.getOrNull(SCHEMA_VERSION)
         }
     }
 
