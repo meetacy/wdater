@@ -1,5 +1,6 @@
 package app.meetacy.database.updater
 
+import app.meetacy.database.updater.internal.suspendOnce
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -42,8 +43,8 @@ public class WdaterTable(
      */
     public val SCHEMA_VERSION: Column<Int?> = integer("version").nullable().default(null)
 
-    init {
-        transaction(database) {
+    private val init = suspendOnce {
+        newSuspendedTransaction(Dispatchers.IO, database) {
             SchemaUtils.create(this@WdaterTable)
         }
     }
@@ -54,6 +55,7 @@ public class WdaterTable(
      * @return The current schema version, or null if it is not set.
      */
     override suspend fun getSchemaVersion(): Int? {
+        init()
         return newSuspendedTransaction(Dispatchers.IO, database) {
             selectAll().firstOrNull()?.get(SCHEMA_VERSION)
         }
@@ -65,6 +67,7 @@ public class WdaterTable(
      * @param version The schema version to set.
      */
     override suspend fun setSchemaVersion(version: Int) {
+        init()
         newSuspendedTransaction(Dispatchers.IO, database) {
             deleteAll()
             insert { it[SCHEMA_VERSION] = version }
