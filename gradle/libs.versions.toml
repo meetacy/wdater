@@ -2,7 +2,7 @@
 
 kotlin = "1.8.10"
 exposed = "0.41.1"
-wdater = "0.0.3"
+wdater = "0.0.4"
 
 [libraries]
 
